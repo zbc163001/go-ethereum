@@ -121,7 +121,7 @@ func ApplyTransaction(config *params.ChainConfig, bc *BlockChain, author *common
 	}
 	// Set the receipt logs and create a bloom for filtering
 	receipt.Logs = statedb.GetLogs(tx.Hash())
-	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+	receipt.Bloom = types.CreateBloom(types.Receipts{receipt}) //bloom filter是一个过滤器，用于level扫描SST文件的index，快速找到可能包含entry的block。
 
 	return receipt, gas, err
 }

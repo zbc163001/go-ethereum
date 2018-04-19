@@ -1169,19 +1169,18 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
 func submitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (common.Hash, error) {
-	if err := b.SendTx(ctx, tx); err != nil {
+	if err := b.SendTx(ctx, tx); err != nil {    // eth/api-backend.go   
 		return common.Hash{}, err
 	}
-	if tx.To() == nil {
-		signer := types.MakeSigner(b.ChainConfig(), b.CurrentBlock().Number())
-		from, err := types.Sender(signer, tx)
+	if tx.To() == nil {	
+		signer := types.MakeSigner(b.ChainConfig(), b.CurrentBlock().Number())  //transaction_signing.go
 		if err != nil {
 			return common.Hash{}, err
 		}
-		addr := crypto.CreateAddress(from, tx.Nonce())
+		addr := crypto.CreateAddress(from, tx.Nonce())   //部署合约
 		log.Info("Submitted contract creation", "fullhash", tx.Hash().Hex(), "contract", addr.Hex())
 	} else {
-		log.Info("Submitted transaction", "fullhash", tx.Hash().Hex(), "recipient", tx.To())
+		log.Info("Submitted transaction", "fullhash", tx.Hash().Hex(), "recipient", tx.To())  //正常交易  core/types/transaction.go
 	}
 	return tx.Hash(), nil
 }

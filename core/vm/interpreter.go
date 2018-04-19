@@ -107,10 +107,10 @@ func (in *Interpreter) enforceRestrictions(op OpCode, operation operation, stack
 // It's important to note that any errors returned by the interpreter should be
 // considered a revert-and-consume-all-gas operation except for
 // errExecutionReverted which means revert-and-keep-gas-left.
-func (in *Interpreter) Run(contract *Contract, input []byte) (ret []byte, err error) {
+func (in *Interpreter) Run(contract *Contract, input []byte) (ret []byte, err error) { //input为st.data
 	// Increment the call depth which is restricted to 1024
 	in.evm.depth++
-	defer func() { in.evm.depth-- }()
+	defer func() { in.evm.depth-- }() //Run()完再执行此处的内容，参数值为主函数执行到这步时的值
 
 	// Reset the previous call's return data. It's unimportant to preserve the old buffer
 	// as every returning call will return new data anyway.
@@ -124,7 +124,7 @@ func (in *Interpreter) Run(contract *Contract, input []byte) (ret []byte, err er
 	var (
 		op    OpCode        // current opcode
 		mem   = NewMemory() // bound memory
-		stack = newstack()  // local stack
+		stack = newstack()  // local stack  本地栈用来存储各种参数，通过pop push 还有其他instrution
 		// For optimisation reason we're using uint64 as the program counter.
 		// It's theoretically possible to go above 2^64. The YP defines the PC
 		// to be uint256. Practically much less so feasible.
@@ -160,8 +160,8 @@ func (in *Interpreter) Run(contract *Contract, input []byte) (ret []byte, err er
 
 		// Get the operation from the jump table and validate the stack to ensure there are
 		// enough stack items available to perform the operation.
-		op = contract.GetOp(pc)
-		operation := in.cfg.JumpTable[op]
+		op = contract.GetOp(pc)           //返回一个pc对应的字节码
+		operation := in.cfg.JumpTable[op] //JumpTable中放入 每个op 对应的方法包含的四个参数，其中execute指向具体的func
 		if !operation.valid {
 			return nil, fmt.Errorf("invalid opcode 0x%x", int(op))
 		}
@@ -189,7 +189,7 @@ func (in *Interpreter) Run(contract *Contract, input []byte) (ret []byte, err er
 		}
 		// consume the gas and return an error if not enough gas is available.
 		// cost is explicitly set so that the capture state defer method cas get the proper cost
-		cost, err = operation.gasCost(in.gasTable, in.evm, contract, stack, mem, memorySize)
+		cost, err = operation.gasCost(in.gasTable, in.evm, contract, stack, mem, memorySize) // core/vm/jump_table.go
 		if err != nil || !contract.UseGas(cost) {
 			return nil, ErrOutOfGas
 		}
@@ -203,6 +203,7 @@ func (in *Interpreter) Run(contract *Contract, input []byte) (ret []byte, err er
 		}
 
 		// execute the operation
+
 		res, err := operation.execute(&pc, in.evm, contract, mem, stack)
 		// verifyPool is a build flag. Pool verification makes sure the integrity
 		// of the integer pool by comparing values to a default value.

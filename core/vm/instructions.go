@@ -49,7 +49,7 @@ func opAdd(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stac
 
 func opSub(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.pop()
-	stack.push(math.U256(x.Sub(x, y)))
+	stack.push(math.U256(x.Sub(x, y))) //将计算结果压入栈
 
 	evm.interpreter.intPool.put(y)
 
@@ -60,7 +60,7 @@ func opMul(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stac
 	x, y := stack.pop(), stack.pop()
 	stack.push(math.U256(x.Mul(x, y)))
 
-	evm.interpreter.intPool.put(y)
+	evm.interpreter.intPool.put(y) //intpool是一个和类似于stack的数据结构，他用get与put函数实现pop 与push
 
 	return nil, nil
 }

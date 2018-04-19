@@ -51,7 +51,7 @@ type Contract struct {
 
 	jumpdests destinations // result of JUMPDEST analysis.
 
-	Code     []byte
+	Code     []byte //指令集合，每个byte都是一个EVM指令
 	CodeHash common.Hash
 	CodeAddr *common.Address
 	Input    []byte
@@ -124,7 +124,7 @@ func (c *Contract) UseGas(gas uint64) (ok bool) {
 	if c.Gas < gas {
 		return false
 	}
-	c.Gas -= gas
+	c.Gas -= gas //合约执行所需的字节码扣除
 	return true
 }
 

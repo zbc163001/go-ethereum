@@ -80,9 +80,9 @@ func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error)
 	// Set the starting gas for the raw transaction
 	var gas uint64
 	if contractCreation && homestead {
-		gas = params.TxGasContractCreation
+		gas = params.TxGasContractCreation // //建立合约的交易的固有花费
 	} else {
-		gas = params.TxGas
+		gas = params.TxGas //单纯交易的固有花费
 	}
 	// Bump the required gas by the amount of transactional data
 	if len(data) > 0 {
@@ -109,13 +109,13 @@ func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error)
 }
 
 // NewStateTransition initialises and returns a new state transition object.
-func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition {
+func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition { // core/types/transaction.go
 	return &StateTransition{
 		gp:       gp,
 		evm:      evm,
 		msg:      msg,
 		gasPrice: msg.GasPrice(),
-		value:    msg.Value(),
+		value:    msg.Value(), //m.acount
 		data:     msg.Data(),
 		state:    evm.StateDB,
 	}
@@ -170,17 +170,17 @@ func (st *StateTransition) buyGas() error {
 		state  = st.state
 		sender = st.from()
 	)
-	mgval := new(big.Int).Mul(new(big.Int).SetUint64(st.msg.Gas()), st.gasPrice)
-	if state.GetBalance(sender.Address()).Cmp(mgval) < 0 {
+	mgval := new(big.Int).Mul(new(big.Int).SetUint64(st.msg.Gas()), st.gasPrice) //Gas()即tx.gaslimit  计算花费gaslimit*gasprice
+	if state.GetBalance(sender.Address()).Cmp(mgval) < 0 {                       //检查是否有足够的ether
 		return errInsufficientBalanceForGas
 	}
-	if err := st.gp.SubGas(st.msg.Gas()); err != nil {
+	if err := st.gp.SubGas(st.msg.Gas()); err != nil { //gp -= gaslimit;  相对于block来说这部分的gas就是花费了
 		return err
 	}
 	st.gas += st.msg.Gas()
 
 	st.initialGas = st.msg.Gas()
-	state.SubBalance(sender.Address(), mgval)
+	state.SubBalance(sender.Address(), mgval) //从账户中扣除相应ether
 	return nil
 }
 
@@ -204,7 +204,7 @@ func (st *StateTransition) preCheck() error {
 // returning the result including the the used gas. It returns an error if it
 // failed. An error indicates a consensus issue.
 func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bool, err error) {
-	if err = st.preCheck(); err != nil {
+	if err = st.preCheck(); err != nil { // buygas（）
 		return
 	}
 	msg := st.msg
@@ -214,11 +214,11 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	contractCreation := msg.To() == nil
 
 	// Pay intrinsic gas
-	gas, err := IntrinsicGas(st.data, contractCreation, homestead)
+	gas, err := IntrinsicGas(st.data, contractCreation, homestead) //此处的gss不等于st.gas,为固有花费掉的gas
 	if err != nil {
 		return nil, 0, false, err
 	}
-	if err = st.useGas(gas); err != nil {
+	if err = st.useGas(gas); err != nil { //st.gas -= st.intrinsicGas
 		return nil, 0, false, err
 	}
 
@@ -231,10 +231,12 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	)
 	if contractCreation {
 		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
+		//部署合约，更新st.gas   sender即位交易中的from value即为交易中amount st.data: transaction的payload[]字节码
+		// 具体st结构初始化可看core/types/transaction.go的AsMessage()
 	} else {
-		// Increment the nonce for the next transaction
+		// Increment the nonce for the next transaction   交易序号
 		st.state.SetNonce(sender.Address(), st.state.GetNonce(sender.Address())+1)
-		ret, st.gas, vmerr = evm.Call(sender, st.to().Address(), st.data, st.gas, st.value)
+		ret, st.gas, vmerr = evm.Call(sender, st.to().Address(), st.data, st.gas, st.value) //执行并更新st.gas
 	}
 	if vmerr != nil {
 		log.Debug("VM returned with error", "err", vmerr)
@@ -245,15 +247,15 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 			return nil, 0, false, vmerr
 		}
 	}
-	st.refundGas()
+	st.refundGas() //偿还gas
 	st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
-
+	//矿工奖励
 	return ret, st.gasUsed(), vmerr != nil, err
 }
 
 func (st *StateTransition) refundGas() {
 	// Apply refund counter, capped to half of the used gas.
-	refund := st.gasUsed() / 2
+	refund := st.gasUsed() / 2 //gasUsed实际上就是计算说明中的requiredGas = st.initialgas， /2是自定义策略
 	if refund > st.state.GetRefund() {
 		refund = st.state.GetRefund()
 	}

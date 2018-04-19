@@ -617,7 +617,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 		invalidTxCounter.Inc(1)
 		return false, err
 	}
-	// If the transaction pool is full, discard underpriced transactions
+	// If the transaction pool is full, discard underpriced transactions   抛弃掉price过低的交易
 	if uint64(len(pool.all)) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underpriced, don't accept it
 		if pool.priced.Underpriced(tx, pool.locals) {
@@ -747,7 +747,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	pool.beats[addr] = time.Now()
 	pool.pendingState.SetNonce(addr, tx.Nonce()+1)
 
-	go pool.txFeed.Send(TxPreEvent{tx})
+	go pool.txFeed.Send(TxPreEvent{tx}) //开始传送给其他节点
 }
 
 // AddLocal enqueues a single transaction into the pool if it is valid, marking
@@ -784,7 +784,7 @@ func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 	defer pool.mu.Unlock()
 
 	// Try to inject the transaction and update any state
-	replace, err := pool.add(tx, local)
+	replace, err := pool.add(tx, local) //
 	if err != nil {
 		return err
 	}

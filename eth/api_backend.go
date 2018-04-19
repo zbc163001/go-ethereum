@@ -149,7 +149,7 @@ func (b *EthApiBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscri
 }
 
 func (b *EthApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
-	return b.eth.txPool.AddLocal(signedTx)
+	return b.eth.txPool.AddLocal(signedTx) // core/tx_pool.go
 }
 
 func (b *EthApiBackend) GetPoolTransactions() (types.Transactions, error) {

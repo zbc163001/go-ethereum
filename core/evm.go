@@ -54,6 +54,7 @@ func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author
 		Time:        new(big.Int).Set(header.Time),
 		Difficulty:  new(big.Int).Set(header.Difficulty),
 		GasLimit:    header.GasLimit,
+		STORAGEGASLIMIT: header.StorageGasLimit,
 		GasPrice:    new(big.Int).Set(msg.GasPrice()),
 	}
 }

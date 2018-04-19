@@ -86,7 +86,7 @@ const (
 	EXTCODESIZE
 	EXTCODECOPY
 	RETURNDATASIZE
-	RETURNDATACOPY
+	RETURNDATACOPY //3e
 )
 
 const (
@@ -112,7 +112,7 @@ const (
 	PC
 	MSIZE
 	GAS
-	JUMPDEST
+	JUMPDEST //5b
 )
 
 const (
